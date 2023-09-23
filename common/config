@@ -400,6 +400,10 @@ _common_mount_opts()
 	ubifs)
 		echo $UBIFS_MOUNT_OPTIONS
 		;;
+	silofs)
+		echo $SILOFS_MOUNT_OPTIONS
+		;;
+		
 	*)
 		;;
 	esac
@@ -546,6 +550,8 @@ _source_specific_fs()
 	ubifs)
 		[ "$UBIUPDATEVOL_PROG" = "" ] && _fatal "ubiupdatevol not found"
 		;;
+	silofs)
+		;;
 	esac
 }
 
@@ -625,6 +631,8 @@ _check_device()
 		fi
 		;;
 	ceph-fuse)
+		;;
+	silofs)
 		;;
 	*)
 		_fatal "common/config: $name ($dev) is not a block device or a network filesystem"

@@ -608,6 +608,8 @@ _test_mkfs()
     xfs)
 	$MKFS_PROG -t $FSTYP -- -f $MKFS_OPTIONS $* $TEST_DEV
 	;;
+    silofs)
+	;;
     *)
 	yes | $MKFS_PROG -t $FSTYP -- $MKFS_OPTIONS $* $TEST_DEV
 	;;
@@ -649,6 +651,8 @@ _try_mkfs_dev()
 	;;
     xfs)
 	$MKFS_PROG -t $FSTYP -- -f $MKFS_OPTIONS $*
+	;;
+    silofs)
 	;;
     *)
 	yes | $MKFS_PROG -t $FSTYP -- $MKFS_OPTIONS $*
@@ -697,7 +701,7 @@ _scratch_mkfs()
 	local mkfs_status
 
 	case $FSTYP in
-	nfs*|afs|cifs|ceph|overlay|glusterfs|pvfs2|9p|fuse|virtiofs)
+	nfs*|afs|cifs|ceph|overlay|glusterfs|pvfs2|9p|fuse|virtiofs|silofs)
 		# unable to re-create this fstyp, just remove all files in
 		# $SCRATCH_MNT to avoid EEXIST caused by the leftover files
 		# created in previous runs
@@ -1370,7 +1374,8 @@ _fs_type()
     #
     _df_device $1 | $AWK_PROG '{ print $2 }' | \
         sed -e 's/nfs4/nfs/' -e 's/fuse.glusterfs/glusterfs/' \
-            -e 's/fuse.ceph-fuse/ceph-fuse/'
+            -e 's/fuse.ceph-fuse/ceph-fuse/' \
+	    -e 's/fuse.silofs/silofs/'
 }
 
 # return the FS mount options of a mounted device
@@ -1609,8 +1614,8 @@ _check_mounted_on()
 	local mnt=$4
 	local type=$5
 
-	# this check doesn't work on ceph-fuse
-	if [ "$dev" != "ceph-fuse" ]; then
+	# this check doesn't work on ceph-fuse or silofs
+	if [ "$dev" != "ceph-fuse" -a "$dev" != "silofs" ]; then
 		_check_if_dev_already_mounted $dev $mnt
 		dev_already_mounted=$?
 
@@ -1722,6 +1727,15 @@ _require_scratch_nocheck()
 		fi
 		if [ ! -d "$SCRATCH_MNT" ]; then
 			_notrun "this test requires a valid \$SCRATCH_MNT"
+		fi
+		;;
+	silofs)
+		echo $SCRATCH_DEV | grep -E -q ":/?" > /dev/null 2>&1
+		if [ -z "$SCRATCH_DEV" -o "$?" != "0" ]; then
+			_notrun "silofs: this test requires a valid \$SCRATCH_DEV"
+		fi
+		if [ ! -d "$SCRATCH_MNT" ]; then
+			_notrun "silofs: this test requires a valid \$SCRATCH_MNT"
 		fi
 		;;
 	*)
@@ -1934,6 +1948,15 @@ _require_test()
 			_notrun "this test requires a valid \$TEST_DIR"
 		fi
 		;;
+	silofs)
+		echo $TEST_DEV | grep -E -q ":/?" > /dev/null 2>&1
+		if [ -z "$TEST_DEV" -o "$?" != "0" ]; then
+			_notrun "silofs: this test requires a valid \$TEST_DEV"
+		fi
+		if [ ! -d "$TEST_DIR" ]; then
+			_notrun "silofs: this test requires a valid \$TEST_DIR"
+		fi
+		;;		
 	*)
 		 if [ -z "$TEST_DEV" ] || [ "`_is_block_dev "$TEST_DEV"`" = "" ]
 		 then
@@ -3273,6 +3296,8 @@ _check_test_fs()
     ubifs)
 	# there is no fsck program for ubifs yet
 	;;
+    silofs)
+	;;
     *)
 	_check_generic_filesystem $TEST_DEV
 	;;
@@ -3336,6 +3361,8 @@ _check_scratch_fs()
 	;;
     ubifs)
 	# there is no fsck program for ubifs yet
+	;;
+    silofs)
 	;;
     *)
 	_check_generic_filesystem $device
@@ -3658,7 +3685,7 @@ _require_exportfs()
 	# doesn't return error. It requires stable FUSE nodeids.
 	# This feature is expected to be implemented in the future in virtiofs,
 	# and this check should be removed by then.
-	[ $FSTYP == "virtiofs" ] && \
+	[ $FSTYP == "virtiofs" -o $FSTYP == "silofs" ] && \
 		_notrun "$FSTYP doesn't support open_by_handle_at(2)"
 
 	mkdir -p "$TEST_DIR"/exportfs_test
@@ -4089,7 +4116,7 @@ _require_atime()
 {
 	_exclude_scratch_mount_option "noatime"
 	case $FSTYP in
-	nfs|afs|cifs|virtiofs)
+	nfs|afs|cifs|virtiofs|silofs)
 		_notrun "atime related mount options have no effect on $FSTYP"
 		;;
 	ceph|ceph-fuse)

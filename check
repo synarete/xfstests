@@ -68,6 +68,7 @@ check options
     -pvfs2		test PVFS2
     -tmpfs		test TMPFS
     -ubifs		test ubifs
+    -silofs             test silofs
     -l			line mode diff
     -udiff		show unified diff (default)
     -n			show me, do not run tests
@@ -282,7 +283,7 @@ while [ $# -gt 0 ]; do
 	case "$1" in
 	-\? | -h | --help) usage ;;
 
-	-nfs|-afs|-glusterfs|-cifs|-9p|-fuse|-virtiofs|-pvfs2|-tmpfs|-ubifs)
+	-nfs|-afs|-glusterfs|-cifs|-9p|-fuse|-virtiofs|-pvfs2|-tmpfs|-ubifs|-silofs)
 		FSTYP="${1:1}"
 		;;
 	-overlay)
