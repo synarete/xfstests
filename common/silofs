@@ -1,0 +1,55 @@
+# -*- mode: sh -*-
+
+_silofs_passwd=${SILOFS_PASSWORD:-0123456789}
+
+mkfs_silofs()
+{
+	local repo="$1"
+
+	_require_command silofs
+
+	rm -rf -- "$repo"
+	mkdir -p -- "$repo" || _fail "cannot create silofs repo $repo"
+
+	silofs init "$repo" \
+		|| _fail "'silofs init' failed"
+
+	silofs mkfs \
+		--size 10G \
+		--password="$_silofs_passwd" \
+		"$repo"/main \
+		|| _fail "'silofs mkfs' failed"
+}
+
+
+mount_silofs()
+{
+	local repo="$1"
+	local mnt="$2"
+
+	_require_command silofs
+
+	mkdir -p "$mnt" || _fail "mkdir $mnt failed"
+	mkdir -p "$repo" || _fail "mkdir $repo failed"
+
+	silofs mount \
+		--password="$_silofs_passwd" \
+		--allow-hostids \
+		--allow-ispecial \
+		--stdalloc \
+		"$repo"/main "$mnt" \
+		|| _fail "'silofs mount' failed"
+
+	_wait_for_mount "$mnt"
+}
+
+umount_silofs()
+{
+	local mnt="$1"
+
+	_require_command silofs
+
+	silofs umount "$mnt" || _fail "silofs umount failed"
+
+	_wait_for_umount "$mnt"
+}

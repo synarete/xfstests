@@ -539,6 +539,9 @@ _source_specific_fs()
 		[ "$UBIUPDATEVOL_PROG" = "" ] && _fatal "ubiupdatevol not found"
 		. ./common/ubifs
 		;;
+	silofs)
+		. ./common/silofs
+		;;
 	esac
 }
 
@@ -618,6 +621,11 @@ _check_device()
 		fi
 		;;
 	ceph-fuse)
+		;;
+	silofs)
+		if [ ! -d "$dev" ]; then
+			_fatal "common/config: $name ($dev) is not a directory for silofs"
+		fi
 		;;
 	*)
 		_fatal "common/config: $name ($dev) is not a block device or a network filesystem"
